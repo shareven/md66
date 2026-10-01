@@ -78,17 +78,40 @@ fallback_build_dmg_skip_jenkins() {
   mv -f "$macos_dir/md66_0.1.0_universal.dmg" "$dmg_dir/md66_0.1.0_universal.dmg"
 }
 
+# 清理早期构建残留的 .app 副本。
+# 历史教训：target 各平台目录里残留的 md66.app 会被 Spotlight/启动台索引，
+# 与 /Applications 正式版同名同 bundle id，从 Dock/Spotlight 打开时可能
+# 启动到这些过时副本（表现为"装的明明是新版，功能却是旧版"）。
+# 打包前统一删除，并注销 LaunchServices 注册，杜绝再次发生。
+cleanup_stale_bundles() {
+  local lsregister="/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister"
+  local found=0
+  while IFS= read -r app; do
+    [ -n "$app" ] || continue
+    found=1
+    echo "   删除旧构建副本: $app"
+    if [ -x "$lsregister" ]; then
+      "$lsregister" -u "$PWD/$app" >/dev/null 2>&1 || true
+    fi
+    rm -rf "$app"
+  done < <(find src-tauri/target -type d -name "md66.app" 2>/dev/null)
+  [ "$found" = "1" ] || echo "   无残留副本"
+}
+
 echo ""
-echo "==> [1/5] 确保两个架构的 Rust target 已安装"
+echo "==> [1/6] 清理早期构建的 .app 副本（防止误启动旧版）"
+cleanup_stale_bundles
+
+echo "==> [2/6] 确保两个架构的 Rust target 已安装"
 rustup target add aarch64-apple-darwin x86_64-apple-darwin 2>&1 | grep -i "info: component" || true
 
-echo "==> [2/5] 同步 Vditor 离线资源"
+echo "==> [3/6] 同步 Vditor 离线资源"
 node scripts/sync-vditor-assets.mjs
 
-echo "==> [3/5] 前端生产构建"
+echo "==> [4/6] 前端生产构建"
 yarn build
 
-echo "==> [4/5] Tauri 打包（universal DMG，含 ARM64 + x86_64）"
+echo "==> [5/6] Tauri 打包（universal DMG，含 ARM64 + x86_64）"
 # 注意：不要用 `| tail -10` 截断输出——它会把 bundle_dmg.sh 的真实报错吞掉。
 # 完整日志写入 src-tauri/target/tauri-build.log，失败时自动重试。
 if ! tauri_build_dmg; then
@@ -109,7 +132,7 @@ if ! tauri_build_dmg; then
   fi
 fi
 
-echo "==> [5/5] 复制到桌面（带版本号）"
+echo "==> [6/6] 复制到桌面（带版本号）"
 VERSION=$(node -p "require('./src-tauri/tauri.conf.json').version")
 DESKTOP="$HOME/Desktop"
 DMG_PATH="src-tauri/target/universal-apple-darwin/release/bundle/dmg"
