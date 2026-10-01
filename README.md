@@ -1,8 +1,14 @@
 # md66
 
+<div align="center">
+
+![Logo](./assets/show1.png)
+
+</div>
+
 [简体中文](./README.md) | [English](./README.en.md)
 
-![Version](https://img.shields.io/badge/version-0.1.0-316ef4) ![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey) ![License](https://img.shields.io/badge/license-MIT-green)
+![Version](https://img.shields.io/badge/version-0.1.1-316ef4) ![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey) ![License](https://img.shields.io/badge/license-MIT-green)
 ![Downloads](https://img.shields.io/github/downloads/shareven/md66/total)
 
 一款**启动快、加载快**的开源免费跨平台 Markdown 编辑器，支持 **macOS**、**Windows** 和 **Linux**。

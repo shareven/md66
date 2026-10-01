@@ -1,6 +1,6 @@
 {
   "name": "md66",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "A free, open-source, cross-platform Markdown editor that starts fast and loads fast — for macOS, Windows, and Linux.",
   "type": "module",
   "scripts": {

@@ -1,8 +1,14 @@
 # md66
 
+<div align="center">
+
+![Logo](./assets/show1.png)
+
+</div>
+
 [简体中文](./README.md) | [English](./README.en.md)
 
-![Version](https://img.shields.io/badge/version-0.1.0-316ef4) ![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey) ![License](https://img.shields.io/badge/license-MIT-green)
+![Version](https://img.shields.io/badge/version-0.1.1-316ef4) ![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey) ![License](https://img.shields.io/badge/license-MIT-green)
 ![Downloads](https://img.shields.io/github/downloads/shareven/md66/total)
 
 A free, open-source, cross-platform Markdown editor that **starts fast and loads fast** — for **macOS**, **Windows**, and **Linux**.
