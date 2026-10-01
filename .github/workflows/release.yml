@@ -1,0 +1,61 @@
+name: Release
+
+# 推送 v* 格式的 tag 时触发（例：git tag v0.1.0 && git push origin v0.1.0）
+on:
+  push:
+    tags: ["v*"]
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # macOS 一个 universal 包（同时支持 ARM64 + x86_64）
+          - platform: macos-latest
+            args: --target universal-apple-darwin --bundles dmg
+          - platform: ubuntu-22.04
+            args: --bundles deb,appimage
+          - platform: windows-latest
+            args: --bundles nsis,msix
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      # macOS arm64 runner 上打 universal 需要 x86_64 target
+      - name: Install x86_64 target for macOS
+        if: matrix.platform == 'macos-latest'
+        run: rustup target add x86_64-apple-darwin
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: yarn
+
+      - name: Install Linux system dependencies
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          sudo apt update
+          sudo apt install -y libwebkit2gtk-4.1-dev build-essential curl wget file \
+            libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev
+
+      - name: Install frontend dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Build and upload to GitHub Release
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: ${{ github.ref_name }}
+          releaseName: "md66 ${{ github.ref_name }}"
+          releaseBody: "跨平台 Markdown 编辑器。各平台安装包见下方 Assets。"
+          releaseDraft: true
+          prerelease: false
+          args: ${{ matrix.args }}

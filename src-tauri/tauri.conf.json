@@ -1,0 +1,113 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "md66",
+  "version": "0.1.0",
+  "identifier": "com.xxxx.md66",
+  "build": {
+    "beforeDevCommand": "yarn dev",
+    "devUrl": "http://localhost:1420",
+    "beforeBuildCommand": "yarn build",
+    "frontendDist": "../build"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "md66",
+        "width": 1000,
+        "height": 700,
+        "minWidth": 640,
+        "minHeight": 420
+      }
+    ],
+    "security": {
+      "csp": null,
+      "assetProtocol": {
+        "enable": true,
+        "scope": ["**"]
+      }
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "fileAssociations": [
+      {
+        "ext": ["md", "markdown", "mdown", "mkd", "mkdn", "mdwn", "mdx"],
+        "mimeType": "text/markdown",
+        "name": "Markdown Document",
+        "role": "Editor",
+        "rank": "Default"
+      },
+      {
+        "ext": ["txt", "text", "log"],
+        "mimeType": "text/plain",
+        "name": "Plain Text",
+        "role": "Editor",
+        "rank": "Default"
+      },
+      {
+        "ext": ["rtf"],
+        "mimeType": "application/rtf",
+        "name": "Rich Text",
+        "role": "Editor",
+        "rank": "Alternate"
+      },
+      {
+        "ext": ["rst", "org", "wiki", "adoc", "asciidoc"],
+        "mimeType": "text/plain",
+        "name": "Lightweight Markup",
+        "role": "Editor",
+        "rank": "Alternate"
+      },
+      {
+        "ext": ["html", "htm"],
+        "mimeType": "text/html",
+        "name": "HTML Document",
+        "role": "Editor",
+        "rank": "Alternate"
+      },
+      {
+        "ext": ["xml"],
+        "mimeType": "application/xml",
+        "name": "XML Document",
+        "role": "Editor",
+        "rank": "Alternate"
+      },
+      {
+        "ext": ["csv", "tsv"],
+        "mimeType": "text/csv",
+        "name": "Spreadsheet Text",
+        "role": "Editor",
+        "rank": "Alternate"
+      },
+      {
+        "ext": ["json"],
+        "mimeType": "application/json",
+        "name": "JSON File",
+        "role": "Editor",
+        "rank": "Alternate"
+      },
+      {
+        "ext": ["yaml", "yml"],
+        "mimeType": "application/yaml",
+        "name": "YAML File",
+        "role": "Editor",
+        "rank": "Alternate"
+      },
+      {
+        "ext": ["toml", "ini", "cfg", "conf", "properties", "env"],
+        "mimeType": "text/plain",
+        "name": "Configuration File",
+        "role": "Editor",
+        "rank": "Alternate"
+      }
+    ]
+  }
+}

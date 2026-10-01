@@ -1,0 +1,7 @@
+# 项目级覆盖：crates.io 索引改用 sparse 协议（rsproxy 镜像），
+# 避免全局配置中 GitHub git 索引直连失败。不影响其他项目。
+[source.crates-io]
+replace-with = 'rsproxy-sparse'
+
+[source.rsproxy-sparse]
+registry = "sparse+https://rsproxy.cn/index/"
