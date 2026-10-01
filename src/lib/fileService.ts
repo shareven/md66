@@ -141,6 +141,13 @@ export async function saveImageAsset(
   const pad = (n: number) => String(n).padStart(2, "0");
   const stamp = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
   const rel = `assets/${stamp}-${Math.random().toString(36).slice(2, 6)}.${ext}`;
+  // writeFile 不会自动创建父目录，assets 不存在时先建（已存在则忽略报错）
+  const { mkdir } = await import("@tauri-apps/plugin-fs");
+  try {
+    await mkdir(joinPath(fileDir, "assets"));
+  } catch {
+    // 目录已存在
+  }
   const abs = joinPath(fileDir, rel);
   await writeBinary(abs, data);
   return rel;

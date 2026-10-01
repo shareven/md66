@@ -297,15 +297,25 @@
   function handlePaste(e: ClipboardEvent) {
     const tab = editor.active;
     if (!tab || !isTauri) return;
-    const file = Array.from(e.clipboardData?.files ?? []).find((f) =>
-      f.type.startsWith("image/"),
+    let file: File | undefined = Array.from(e.clipboardData?.files ?? []).find(
+      (f) => f.type.startsWith("image/"),
     );
+    if (!file) {
+      // 从网页等处复制的图片不在 files 里，只在 items 里，需兜底
+      const item = Array.from(e.clipboardData?.items ?? []).find((i) =>
+        i.type.startsWith("image/"),
+      );
+      file = item?.getAsFile() ?? undefined;
+    }
     if (!file) return; // 非图片走默认粘贴
     e.preventDefault();
+    // 必须阻断传播：Vditor 的 paste 处理器会无条件 stopPropagation 并接管，
+    // 因此本处理器只能挂在捕获阶段（onpastecapture）才能先于它拿到事件
+    e.stopPropagation();
     void (async () => {
-      const ext = (file.type.split("/")[1] ?? "png").replace("jpeg", "jpg");
-      const data = new Uint8Array(await file.arrayBuffer());
-      await insertImageFromData(file.name, ext, data);
+      const ext = (file!.type.split("/")[1] ?? "png").replace("jpeg", "jpg");
+      const data = new Uint8Array(await file!.arrayBuffer());
+      await insertImageFromData(file!.name, ext, data);
     })();
   }
 
@@ -448,7 +458,11 @@
   });
 </script>
 
-<svelte:window onkeydown={handleKeydown} onpaste={handlePaste} onfocus={checkExternalChanges} />
+<svelte:window
+  onkeydown={handleKeydown}
+  onpastecapture={handlePaste}
+  onfocus={checkExternalChanges}
+/>
 
 <div class="app" class:dark={editor.dark}>
   <header>

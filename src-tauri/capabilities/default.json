@@ -25,6 +25,10 @@
       "identifier": "fs:allow-write-file",
       "allow": [{ "path": "**" }]
     },
+    {
+      "identifier": "fs:allow-mkdir",
+      "allow": [{ "path": "**" }]
+    },
     "core:webview:allow-create-webview-window",
     "core:window:allow-destroy"
   ]
