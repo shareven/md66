@@ -1,4 +1,7 @@
 use std::sync::Mutex;
+// RunEvent::Opened 及其广播逻辑仅存在于 macOS/iOS/Android（tauri 源码 cfg 门控），
+// Windows/Linux 编译期裁剪，否则 cargo 在这两个平台报"变体不存在"
+#[cfg(any(target_os = "macos", target_os = "ios", target_os = "android"))]
 use tauri::Emitter;
 
 /// 冷启动（双击文件唤起应用）时暂存的待打开文件。
@@ -13,6 +16,7 @@ fn take_pending_files() -> Vec<String> {
 }
 
 /// 暂存 + 立即广播（前端未就绪/晚就绪时靠 take_pending_files 轮询兜底）
+#[cfg(any(target_os = "macos", target_os = "ios", target_os = "android"))]
 fn push_files(app: &tauri::AppHandle, files: Vec<String>) {
     if files.is_empty() {
         return;
@@ -48,7 +52,9 @@ pub fn run() {
         .build(tauri::generate_context!())
         .expect("error while building tauri application");
 
-    // macOS: 双击文件（冷启动与已运行）→ RunEvent::Opened
+    // macOS: 双击文件（冷启动与已运行）→ RunEvent::Opened。
+    // 该变体仅 macOS/iOS/Android 存在，其余平台编译期裁剪
+    #[cfg(any(target_os = "macos", target_os = "ios", target_os = "android"))]
     app.run(|app_handle, event| {
         if let tauri::RunEvent::Opened { urls } = event {
             let files: Vec<String> = urls
@@ -66,4 +72,7 @@ pub fn run() {
             push_files(app_handle, files);
         }
     });
+
+    #[cfg(not(any(target_os = "macos", target_os = "ios", target_os = "android")))]
+    app.run(|_app_handle, _event| {});
 }
