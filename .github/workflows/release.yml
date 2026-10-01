@@ -61,7 +61,12 @@ jobs:
         with:
           tagName: ${{ github.ref_name }}
           releaseName: "md66 ${{ github.ref_name }}"
-          releaseBody: "跨平台 Markdown 编辑器。各平台安装包见下方 Assets。"
+          releaseBody: |
+            跨平台 Markdown 编辑器。各平台安装包见下方 Assets。
+            macOS 需在系统设置 > 隐私与安全性 > 安全性中点击 **仍要打开 / 打开**
+
+            Cross-platform Markdown editor. See the Assets section below for installation packages on various platforms.
+            On macOS, go to System Settings > Privacy & Security > Security and click **Open Anyway / Open**.
           releaseDraft: true
           prerelease: false
           args: ${{ matrix.args }}
