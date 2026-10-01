@@ -24,7 +24,7 @@ Built with Tauri 2 + Svelte 5: preview mode is powered by the [Vditor](https://g
 | Platform | Installer |
 |---|---|
 | macOS (universal ARM64 + x86_64) | `.dmg` |
-| Windows | NSIS `.exe` installer / `.msix` |
+| Windows | NSIS `.exe` installer |
 | Linux | `.deb` / AppImage |
 
 > Built-in update check: on launch the app compares its version against the latest GitHub Release; when a newer version exists, an update button appears at the top — one click downloads and installs it.
@@ -155,7 +155,7 @@ Three build scripts, one per platform. Each checks that the platform matches and
 | Platform | Command | Output |
 |---|---|---|
 | **macOS** | `./scripts/build-macos.sh` | `.dmg` (universal, ARM64 + x86_64) |
-| **Windows** | `scripts\build-windows.bat` (CMD / PowerShell) | NSIS `.exe` installer + `.msix` |
+| **Windows** | `scripts\build-windows.bat` (CMD / PowerShell) | NSIS `.exe` installer |
 | **Linux** | `./scripts/build-linux.sh` | `.deb` + AppImage |
 
 All artifacts land under `src-tauri/target/release/bundle/` in their subdirectories.
@@ -167,7 +167,7 @@ To run the raw commands manually (equivalent to what the scripts do):
 yarn build && yarn tauri build --target universal-apple-darwin --bundles dmg
 
 # Windows (NSIS installer)
-yarn build && yarn tauri build --bundles nsis,msix
+yarn build && yarn tauri build --bundles nsis
 
 # Linux (deb + AppImage)
 yarn build && yarn tauri build --bundles deb,appimage

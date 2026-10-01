@@ -8,7 +8,7 @@ REM      2. yarn           (npm i -g yarn)
 REM      3. Rust toolchain (https://rustup.rs — 选 MSVC 稳定版)
 REM      4. Visual Studio 2022 构建工具（MSVC + Windows 10 SDK）
 REM      5. WebView2 Runtime（Win11 自带，Win10 需单独装）
-REM  输出：NSIS 安装包 (.exe) + MSIX
+REM  输出：NSIS 安装包 (.exe)
 REM ============================================================
 setlocal enabledelayedexpansion
 
@@ -45,8 +45,8 @@ cargo check --release 2>&1
 if errorlevel 1 goto :error
 cd ..
 
-echo ==^> [4/5] Tauri 打包（NSIS + MSIX）
-call yarn tauri build --bundles nsis,msix 2>&1
+echo ==^> [4/5] Tauri 打包（NSIS 安装包）
+call yarn tauri build --bundles nsis 2>&1
 if errorlevel 1 goto :error
 
 echo ==^> [5/5] 复制到桌面（带版本号）
@@ -54,7 +54,6 @@ for /f "usebackq delims=" %%v in (`node -p "require('./src-tauri/tauri.conf.json
 set "DESKTOP=%USERPROFILE%\Desktop"
 if not exist "%DESKTOP%" set "DESKTOP=%USERPROFILE%\OneDrive\Desktop"
 copy /Y "src-tauri\target\release\bundle\nsis\*-setup.exe" "%DESKTOP%\md66_%VERSION%_x64-setup.exe" >nul
-copy /Y "src-tauri\target\release\bundle\msix\*.msix" "%DESKTOP%\md66_%VERSION%_x64.msix" >nul
 dir /b "%DESKTOP%\md66_%VERSION%_*" 2>nul
 
 echo.

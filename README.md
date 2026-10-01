@@ -24,7 +24,7 @@
 | 平台 | 安装包 |
 |---|---|
 | macOS（ARM64 + x86_64 通用） | `.dmg` |
-| Windows | NSIS `.exe` 安装包 / `.msix` |
+| Windows | NSIS `.exe` 安装包 |
 | Linux | `.deb` / AppImage |
 
 > 应用内支持自动检查更新：启动后自动对比 GitHub 最新 Release，有新版本时顶部显示更新按钮，点击即可下载并安装。
@@ -155,7 +155,7 @@ yarn tauri dev
 | 平台 | 运行命令 | 产物 |
 |---|---|---|
 | **macOS** | `./scripts/build-macos.sh` | `.dmg`（universal，ARM64 + x86_64） |
-| **Windows** | `scripts\build-windows.bat`（CMD / PowerShell） | NSIS `.exe` 安装包 + `.msix` |
+| **Windows** | `scripts\build-windows.bat`（CMD / PowerShell） | NSIS `.exe` 安装包 |
 | **Linux** | `./scripts/build-linux.sh` | `.deb` + AppImage |
 
 所有产物输出到 `src-tauri/target/release/bundle/` 下对应子目录。
@@ -167,7 +167,7 @@ yarn tauri dev
 yarn build && yarn tauri build --target universal-apple-darwin --bundles dmg
 
 # Windows（NSIS 安装包）
-yarn build && yarn tauri build --bundles nsis,msix
+yarn build && yarn tauri build --bundles nsis
 
 # Linux（deb + AppImage）
 yarn build && yarn tauri build --bundles deb,appimage
