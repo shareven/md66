@@ -10,6 +10,7 @@
 <script lang="ts">
   /** 命令面板（⌘⇧P）：搜索并执行菜单命令 */
   import { editor } from "$lib/editorStore.svelte";
+  import { i18n } from "$lib/i18n.svelte";
 
   let { commands }: { commands: Command[] } = $props();
 
@@ -57,12 +58,12 @@
       class="panel"
       onclick={(e) => e.stopPropagation()}
       role="dialog"
-      aria-label="命令面板"
+      aria-label={i18n.t.palette.aria}
       tabindex="-1"
     >
       <input
         type="text"
-        placeholder="输入命令名称…"
+        placeholder={i18n.t.palette.placeholder}
         bind:value={keyword}
         oninput={() => (cursor = 0)}
       />
@@ -80,7 +81,7 @@
             {#if cmd.shortcut}<span class="kbd">{cmd.shortcut}</span>{/if}
           </button>
         {:else}
-          <div class="empty">无匹配命令</div>
+          <div class="empty">{i18n.t.palette.empty}</div>
         {/each}
       </div>
     </div>

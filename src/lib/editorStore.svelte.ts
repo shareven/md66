@@ -3,6 +3,7 @@
  * 状态放模块级单例，路由切换（语法说明/关于页）不丢失编辑现场。
  */
 import { basename, isTauri, loadDraft, saveDraft } from "./fileService";
+import { i18n } from "./i18n.svelte";
 
 export type Mode = "preview" | "source";
 
@@ -33,9 +34,9 @@ export function createTab(init?: Partial<Tab>): Tab {
   };
 }
 
-const WELCOME_MD = `# 欢迎使用 md66
+const WELCOME_MD_ZH = `# 欢迎使用 md66
 
-一款支持 **macOS**、**Windows** 与 **Linux** 的 Markdown 编辑器。
+一款**启动快、加载快**的开源免费跨平台 Markdown 编辑器，支持 **macOS**、**Windows** 和 **Linux**。
 
 ## 双模式编辑
 
@@ -63,9 +64,46 @@ const hello = (name: string) => \`你好，\${name}！\`;
 | 导出 PDF / Word / 图片 | 已支持 |
 `;
 
+const WELCOME_MD_EN = `# Welcome to md66
+
+A Markdown editor for **macOS**, **Windows**, and **Linux**.
+
+## Dual-mode editing
+
+- **Preview mode**: live rendering — edit directly on the formatted text
+- **Source mode**: edit raw Markdown with syntax highlighting
+
+Both modes stay in sync; press <kbd>⌘/</kbd> (<kbd>Ctrl+/</kbd> on Windows) to switch.
+
+## Files & saving
+
+- <kbd>⌘O</kbd> open, <kbd>⌘S</kbd> save, <kbd>⌘⇧S</kbd> save as, <kbd>⌘T</kbd> new tab
+- Linked files **auto-save** on change; otherwise changes are kept as a draft and restored on restart
+- Pasted or dropped images go to an \`assets/\` folder next to the file
+
+\`\`\`ts
+const hello = (name: string) => \`Hello, \${name}!\`;
+\`\`\`
+
+| Feature | Status |
+| ---- | ---- |
+| Dual-mode editing | Ready |
+| Auto-save / draft restore | Ready |
+| Open / save files | Ready |
+| Outline / find & replace | Ready |
+| Export PDF / Word / image | Ready |
+`;
+
+/** 两种语言的欢迎文档（isWelcome 需同时识别，避免切语言后误判为普通文档） */
+const WELCOME_DOCS = [WELCOME_MD_ZH, WELCOME_MD_EN];
+
+function welcomeMd(): string {
+  return i18n.lang === "zh" ? WELCOME_MD_ZH : WELCOME_MD_EN;
+}
+
 /** 欢迎页标签：未关联文件且内容未被改过 */
 function isWelcome(tab: Tab): boolean {
-  return !tab.path && tab.content === WELCOME_MD;
+  return !tab.path && WELCOME_DOCS.includes(tab.content);
 }
 
 class EditorStore {
@@ -138,15 +176,15 @@ class EditorStore {
       this.tabs = this.tabs.filter((t) => !isWelcome(t));
       this.pushRecent(path);
       this.persistDraft();
-      this.flash(`已打开 ${basename(path)}`);
+      this.flash(i18n.t.store.opened(basename(path)));
     } catch {
-      this.flash("打开文件失败");
+      this.flash(i18n.t.store.openFailed);
     }
   }
 
   /** 打开文件选择框 */
   async openFilePicker(): Promise<void> {
-    if (!isTauri) return this.flash("文件功能需在桌面应用中使用（yarn tauri dev）");
+    if (!isTauri) return this.flash(i18n.t.store.desktopOnly);
     const { openFileDialog } = await import("./fileService");
     const path = await openFileDialog();
     if (path) await this.openPath(path);
@@ -156,7 +194,7 @@ class EditorStore {
   async saveActive(): Promise<void> {
     const tab = this.active;
     if (!tab) return;
-    if (!isTauri) return this.flash("文件功能需在桌面应用中使用（yarn tauri dev）");
+    if (!isTauri) return this.flash(i18n.t.store.desktopOnly);
     if (!tab.path) return this.saveActiveAs();
     try {
       const { writeMarkdown } = await import("./fileService");
@@ -165,9 +203,9 @@ class EditorStore {
       tab.saved = tab.content;
       this.pushRecent(tab.path);
       this.persistDraft();
-      this.flash("已保存");
+      this.flash(i18n.t.store.saved);
     } catch {
-      this.flash("保存失败");
+      this.flash(i18n.t.store.saveFailed);
     }
   }
 
@@ -175,10 +213,10 @@ class EditorStore {
   async saveActiveAs(): Promise<void> {
     const tab = this.active;
     if (!tab) return;
-    if (!isTauri) return this.flash("文件功能需在桌面应用中使用（yarn tauri dev）");
+    if (!isTauri) return this.flash(i18n.t.store.desktopOnly);
     try {
       const { saveAsDialog, writeMarkdown, TEXT_EXTENSIONS } = await import("./fileService");
-      const name = tab.path ? basename(tab.path) : "未命名.md";
+      const name = tab.path ? basename(tab.path) : i18n.t.store.unnamedMd;
       // 如果当前文件名已带受支持扩展名，保留原名；否则默认补 .md
       const hasSupportedExt = new RegExp(
         `\\.(${TEXT_EXTENSIONS.join("|")})$`, "i",
@@ -191,9 +229,9 @@ class EditorStore {
       tab.saved = tab.content;
       this.pushRecent(path);
       this.persistDraft();
-      this.flash(`已保存到 ${basename(path)}`);
+      this.flash(i18n.t.store.savedTo(basename(path)));
     } catch {
-      this.flash("保存失败");
+      this.flash(i18n.t.store.saveFailed);
     }
   }
 
@@ -220,7 +258,7 @@ class EditorStore {
 
   /* ---------- 标签 ---------- */
 
-  openBlankTab(content = WELCOME_MD, activate = true): Tab {
+  openBlankTab(content = welcomeMd(), activate = true): Tab {
     const tab = createTab({ content, saved: content });
     this.tabs.push(tab);
     if (activate) this.activeId = tab.id;
@@ -253,8 +291,9 @@ class EditorStore {
 
   restoreSession() {
     const draft = loadDraft();
-    // 兼容旧草稿：欢迎页标签不恢复
-    const restored = draft?.tabs.filter((t) => t.path || t.content !== WELCOME_MD) ?? [];
+    // 兼容旧草稿：欢迎页标签不恢复（两种语言的欢迎文档都识别）
+    const restored =
+      draft?.tabs.filter((t) => t.path || !WELCOME_DOCS.includes(t.content)) ?? [];
     if (restored.length > 0) {
       this.tabs = restored.map((t) =>
         createTab({ path: t.path ?? null, content: t.content, saved: t.content }),
@@ -285,7 +324,7 @@ class EditorStore {
   toggleAutoSave() {
     this.autoSave = !this.autoSave;
     saveBool("md66.autoSave", this.autoSave);
-    this.flash(this.autoSave ? "已开启自动保存" : "已关闭自动保存");
+    this.flash(this.autoSave ? i18n.t.store.autoSaveOn : i18n.t.store.autoSaveOff);
     if (this.autoSave) this.scheduleAutoSave();
   }
 
@@ -309,7 +348,7 @@ class EditorStore {
         for (const tab of dirty) tab.saved = tab.content;
         this.persistDraft();
       } catch {
-        this.flash("自动保存失败");
+        this.flash(i18n.t.store.autoSaveFailed);
       }
     }, 800);
   }
@@ -382,10 +421,10 @@ function saveRecents(list: string[]) {
 
 /** 关闭标签前确认（有未保存修改时）。返回 false 表示取消关闭。 */
 async function confirmDiscard(tab: Tab): Promise<boolean> {
-  const name = tab.path ? basename(tab.path) : "未命名";
-  if (!isTauri) return window.confirm(`放弃对「${name}」的未保存修改？`);
+  const name = tab.path ? basename(tab.path) : i18n.t.common.unnamed;
+  if (!isTauri) return window.confirm(i18n.t.store.discardBrowser(name));
   const { ask } = await import("@tauri-apps/plugin-dialog");
-  return ask(`「${name}」有未保存的修改，确定放弃吗？`, {
+  return ask(i18n.t.store.discardAsk(name), {
     title: "md66",
     kind: "warning",
   });

@@ -1,7 +1,7 @@
 {
   "name": "md66",
   "version": "0.1.0",
-  "description": "",
+  "description": "A free, open-source, cross-platform Markdown editor that starts fast and loads fast — for macOS, Windows, and Linux.",
   "type": "module",
   "scripts": {
     "dev": "node scripts/sync-vditor-assets.mjs && vite dev",

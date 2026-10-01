@@ -4,6 +4,7 @@
   import { convertFileSrc } from "@tauri-apps/api/core";
   import "vditor/dist/index.css";
   import { editor } from "$lib/editorStore.svelte";
+  import { i18n } from "$lib/i18n.svelte";
   import { isTauri, resolveRelative } from "$lib/fileService";
 
   /** 当前 Markdown 内容（双向绑定） */
@@ -42,6 +43,8 @@
       toolbar: [],
       toolbarConfig: { hide: true },
       placeholder: "",
+      // 界面语言跟随系统（语言包已随 vditor 资源本地化，离线可用）
+      lang: i18n.lang === "zh" ? "zh_CN" : "en_US",
       theme: dark ? "dark" : "classic",
       // 支持文档内 [TOC] 目录。
       // theme.current 与 hljs.style 必须在构造时传对：Vditor 的正文/代码主题是

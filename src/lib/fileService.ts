@@ -4,6 +4,7 @@
  * 浏览器环境：降级为仅 localStorage 草稿。
  */
 import { getCurrentWindow } from "@tauri-apps/api/window";
+import { i18n } from "./i18n.svelte";
 
 export const isTauri =
   typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
@@ -75,10 +76,13 @@ export const TEXT_EXTENSIONS = [
   "log", "env", "gitignore", "dockerignore",
 ];
 
-const mdFilters = [
-  { name: "Markdown / 文本", extensions: TEXT_EXTENSIONS },
-  { name: "所有文件", extensions: ["*"] },
-];
+/** 文件对话框过滤器（名称随界面语言本地化） */
+function mdFilters() {
+  return [
+    { name: i18n.t.file.filterMd, extensions: TEXT_EXTENSIONS },
+    { name: i18n.t.file.filterAll, extensions: ["*"] },
+  ];
+}
 
 /** 打开文件选择框，返回所选路径；取消返回 null */
 export async function openFileDialog(): Promise<string | null> {
@@ -86,7 +90,7 @@ export async function openFileDialog(): Promise<string | null> {
   const path = await open({
     multiple: false,
     directory: false,
-    filters: mdFilters,
+    filters: mdFilters(),
   });
   return typeof path === "string" ? path : null;
 }
@@ -94,7 +98,7 @@ export async function openFileDialog(): Promise<string | null> {
 /** 另存为选择框，返回目标路径；取消返回 null */
 export async function saveAsDialog(defaultName: string): Promise<string | null> {
   const { save } = await import("@tauri-apps/plugin-dialog");
-  return await save({ filters: mdFilters, defaultPath: defaultName });
+  return await save({ filters: mdFilters(), defaultPath: defaultName });
 }
 
 /** 图片导出选择框 */

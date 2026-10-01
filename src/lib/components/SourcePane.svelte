@@ -6,9 +6,44 @@
   import { indentWithTab } from "@codemirror/commands";
   import { markdown, markdownLanguage } from "@codemirror/lang-markdown";
   import { languages } from "@codemirror/language-data";
+  import { HighlightStyle, syntaxHighlighting } from "@codemirror/language";
+  import { tags as t } from "@lezer/highlight";
   import { oneDark } from "@codemirror/theme-one-dark";
   import { editor } from "$lib/editorStore.svelte";
   import { findHighlight } from "$lib/findExtension";
+
+  /** 亮色语法配色（GitHub Light 风格）：标题蓝、强调橙、链接青、代码块按语言高亮 */
+  const lightHighlight = syntaxHighlighting(
+    HighlightStyle.define([
+      // Markdown 标记符号（# ** - 等）统一淡灰
+      { tag: [t.meta, t.processingInstruction], color: "#8c959f" },
+      // Markdown 元素
+      { tag: t.heading, color: "#0550ae", fontWeight: "600" },
+      { tag: t.strong, color: "#953800", fontWeight: "700" },
+      { tag: t.emphasis, color: "#953800", fontStyle: "italic" },
+      { tag: t.strikethrough, color: "#6e7781", textDecoration: "line-through" },
+      { tag: t.link, color: "#0969da", textDecoration: "underline" },
+      { tag: t.url, color: "#0a3069" },
+      { tag: t.monospace, color: "#0550ae" },
+      { tag: [t.quote, t.list], color: "#116329" },
+      // 内嵌代码块（语言自动识别）
+      { tag: [t.keyword, t.moduleKeyword, t.controlKeyword], color: "#cf222e" },
+      { tag: [t.string, t.special(t.string)], color: "#0a3069" },
+      { tag: [t.number, t.bool, t.null], color: "#0550ae" },
+      { tag: t.comment, color: "#6e7781", fontStyle: "italic" },
+      { tag: [t.typeName, t.className, t.tagName], color: "#116329" },
+      {
+        tag: [
+          t.function(t.variableName),
+          t.definition(t.variableName),
+          t.propertyName,
+          t.attributeName,
+          t.labelName,
+        ],
+        color: "#8250df",
+      },
+    ]),
+  );
 
   /** 当前 Markdown 内容（双向绑定） */
   let { value = $bindable(""), active = false, dark = false, fontPx = 16 } = $props();
@@ -33,7 +68,7 @@
         basicSetup,
         keymap.of([indentWithTab]),
         markdown({ base: markdownLanguage, codeLanguages: languages }),
-        themeComp.of(dark ? oneDark : []),
+        themeComp.of(dark ? oneDark : lightHighlight),
         findHighlight,
         EditorView.updateListener.of((update) => {
           if (update.docChanged) value = update.state.doc.toString();
@@ -89,7 +124,9 @@
   // 跟随深浅色主题
   $effect(() => {
     const isDark = dark;
-    view?.dispatch({ effects: themeComp.reconfigure(isDark ? oneDark : []) });
+    view?.dispatch({
+      effects: themeComp.reconfigure(isDark ? oneDark : lightHighlight),
+    });
   });
 </script>
 

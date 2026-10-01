@@ -9,6 +9,7 @@
   import { EditorView } from "@codemirror/view";
   import { setFindState } from "$lib/findExtension";
   import { editor } from "$lib/editorStore.svelte";
+  import { i18n } from "$lib/i18n.svelte";
 
   let query = $state("");
   let replacement = $state("");
@@ -275,7 +276,7 @@
     const from = matches[idx];
     tab.content =
       tab.content.slice(0, from) + replacement + tab.content.slice(from + query.length);
-    editor.flash(`已替换 ${idx + 1}/${total}`);
+    editor.flash(i18n.t.find.replacedOne(idx + 1, total));
   }
 
   function replaceAll() {
@@ -283,7 +284,7 @@
     if (!tab || !query || matches.length === 0) return;
     const total = matches.length;
     tab.content = tab.content.split(query).join(replacement);
-    editor.flash(`已替换 ${total} 处`);
+    editor.flash(i18n.t.find.replacedAll(total));
   }
 
   /* ---------- 键盘 ---------- */
@@ -334,7 +335,7 @@
           class="mark"
           class:cur={m.cur}
           style="top: {Math.min(98, Math.max(0, m.r * 100))}%"
-          title="第 {m.i + 1} 处"
+          title={i18n.t.find.mark(m.i + 1)}
           onclick={() => gotoAt(m.i)}
         ></button>
       {/each}
@@ -346,27 +347,27 @@
       <input
         bind:this={findInput}
         type="text"
-        placeholder="查找…"
+        placeholder={i18n.t.find.placeholder}
         bind:value={query}
         onkeydown={onFindKeydown}
       />
       <span class="count">
-        {matches.length > 0 ? `${Math.min(current + 1, matches.length)}/${matches.length}` : query ? "0 处" : ""}
+        {matches.length > 0 ? `${Math.min(current + 1, matches.length)}/${matches.length}` : query ? i18n.t.find.zero : ""}
       </span>
     </div>
     <input
       type="text"
       class="replace-input"
-      placeholder="替换为…"
+      placeholder={i18n.t.find.replacePlaceholder}
       bind:value={replacement}
       onkeydown={onReplaceKeydown}
     />
     <div class="btns">
-      <button type="button" title="上一处 (⇧Enter)" onclick={() => goto(-1)} disabled={!matches.length}>↑</button>
-      <button type="button" title="下一处 (Enter)" onclick={() => goto(1)} disabled={!matches.length}>↓</button>
-      <button type="button" title="替换当前处 (替换框 Enter)" onclick={replaceCurrent} disabled={!matches.length}>替换</button>
-      <button type="button" title="全部替换" onclick={replaceAll} disabled={!matches.length}>全部</button>
-      <button type="button" class="close" title="关闭 (Esc)" onclick={() => (editor.findOpen = false)}>×</button>
+      <button type="button" title={i18n.t.find.prev} onclick={() => goto(-1)} disabled={!matches.length}>↑</button>
+      <button type="button" title={i18n.t.find.next} onclick={() => goto(1)} disabled={!matches.length}>↓</button>
+      <button type="button" title={i18n.t.find.replaceTitle} onclick={replaceCurrent} disabled={!matches.length}>{i18n.t.find.replace}</button>
+      <button type="button" title={i18n.t.find.allTitle} onclick={replaceAll} disabled={!matches.length}>{i18n.t.find.all}</button>
+      <button type="button" class="close" title={i18n.t.find.close} onclick={() => (editor.findOpen = false)}>×</button>
     </div>
   </div>
 {/if}

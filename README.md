@@ -1,15 +1,33 @@
 # md66
 
-![Version](https://img.shields.io/badge/version-0.1.0-316ef4) ![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey) ![License](https://img.shields.io/badge/license-MIT-green)
-![Downloads](https://img.shields.io/github/downloads/shareven/md66/total) |
+[简体中文](./README.md) | [English](./README.en.md)
 
-一款开源免费跨平台 Markdown 编辑器，支持 **macOS**、**Windows** 和 **Linux**。
+![Version](https://img.shields.io/badge/version-0.1.0-316ef4) ![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey) ![License](https://img.shields.io/badge/license-MIT-green)
+![Downloads](https://img.shields.io/github/downloads/shareven/md66/total)
+
+一款**启动快、加载快**的开源免费跨平台 Markdown 编辑器，支持 **macOS**、**Windows** 和 **Linux**。
 
 基于 Tauri 2 + Svelte 5 构建：预览模式使用 [Vditor](https://github.com/Vanessa219/vditor) 即时渲染引擎，源码模式使用 [CodeMirror 6](https://codemirror.net/)。
 
+> 🔒 **隐私承诺**：不收集任何个人信息，联网仅用于访问 GitHub Release 下载更新。
+
+## 为什么快
+
+- ⚡ **冷启动仅 ~0.3 秒**（实测）：原生 Tauri 2（Rust）内核，不打包浏览器，没有 Electron 的臃肿
+- 📄 **大文件即点即开**：长文档打开、滚动、输入全程流畅，不卡顿
+- 📦 **安装包仅 ~11 MB**：编辑器资源全部本地化，启动零网络请求，完全**离线可用**
+
 ## 下载 | Download
 
- [Release](https://github.com/shareven/parcel/releases/) 
+[GitHub Releases](https://github.com/shareven/md66/releases)
+
+| 平台 | 安装包 |
+|---|---|
+| macOS（ARM64 + x86_64 通用） | `.dmg` |
+| Windows | NSIS `.exe` 安装包 / `.msix` |
+| Linux | `.deb` / AppImage |
+
+> 应用内支持自动检查更新：启动后自动对比 GitHub 最新 Release，有新版本时顶部显示更新按钮，点击即可下载并安装。
 
 ## 功能特性
 
@@ -37,7 +55,7 @@
 
 ### 导出
 
-- PDF（系统打印对话框中选择"存储为 PDF"）
+- PDF（A4 分页直接导出，无需打印对话框）
 
 - Word（.doc）
 
@@ -75,13 +93,15 @@
 
 ### 其他
 
+- **双语界面**：自动跟随系统语言显示中文或 English
+
+- **应用内检查更新**（GitHub Release，一键下载安装）
+
 - 跟随系统深浅色主题
 
 - Markdown 语法说明页（帮助菜单）
 
 - 编辑器资源全部本地化，**离线可用**
-
-- 简体中文界面
 
 ## 快捷键
 
@@ -98,7 +118,7 @@
 | ⌘⇧O / Ctrl+Shift+O   | 大纲面板           |
 | ⌘⇧P / Ctrl+Shift+P   | 命令面板           |
 | ⌘P / Ctrl+P          | 打印             |
-| ⌘+ / ⌘- / ⌘0         | 放大 / 缩小 / 重置字号 |
+| ⌘+ / ⌘- / ⌘0（Ctrl+= / Ctrl+- / Ctrl+0） | 放大 / 缩小 / 重置字号 |
 
 ## 环境要求
 
@@ -160,6 +180,8 @@ src/                      前端（SvelteKit）
   lib/
     components/           编辑器、菜单栏、标签栏、大纲、查找等组件
     editorStore.svelte.ts 全局编辑器状态（多标签 / 模式 / 字号）
+    i18n.svelte.ts        双语字典（中文 / English，跟随系统语言）
+    updater.svelte.ts     GitHub Release 更新检测与下载安装
     fileService.ts        文件读写、草稿会话、路径工具
     exporter.ts           导出 Word / 图片 / 打印
   routes/                 页面：编辑器 / 语法说明 / 关于

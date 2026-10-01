@@ -2,6 +2,7 @@
   /** 大纲面板：标题导航，点击跳转（预览模式滚动到标题；源码模式定位到行） */
   import type { EditorView } from "@codemirror/view";
   import { editor } from "$lib/editorStore.svelte";
+  import { i18n } from "$lib/i18n.svelte";
 
   interface Heading {
     level: number;
@@ -54,9 +55,9 @@
 </script>
 
 <aside class="outline">
-  <div class="title">大纲</div>
+  <div class="title">{i18n.t.outline.title}</div>
   {#if headings.length === 0}
-    <div class="empty">暂无标题</div>
+    <div class="empty">{i18n.t.outline.empty}</div>
   {:else}
     {#each headings as h (h.line + h.text)}
       <button

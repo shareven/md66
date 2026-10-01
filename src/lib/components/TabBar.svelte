@@ -1,10 +1,11 @@
 <script lang="ts">
   /** 多标签栏 */
   import { editor } from "$lib/editorStore.svelte";
+  import { i18n } from "$lib/i18n.svelte";
   import { basename } from "$lib/fileService";
 
   function nameOf(path: string | null): string {
-    return path ? basename(path) : "未命名";
+    return path ? basename(path) : i18n.t.common.unnamed;
   }
 </script>
 
@@ -16,7 +17,7 @@
       class:on={tab.id === editor.activeId}
       onclick={() => editor.activate(tab.id)}
       ondblclick={() => tab.id === editor.activeId && (editor.mode = editor.mode === "preview" ? "source" : "preview")}
-      title={tab.path ?? "未命名"}
+      title={tab.path ?? i18n.t.common.unnamed}
     >
       <span class="name">{nameOf(tab.path)}</span>
       {#if tab.id === editor.activeId && tab.content !== tab.saved}
@@ -27,7 +28,7 @@
         class="close"
         role="button"
         tabindex="-1"
-        aria-label="关闭标签"
+        aria-label={i18n.t.tab.close}
         onclick={(e) => {
           e.stopPropagation();
           void editor.closeTab(tab.id);
@@ -38,7 +39,7 @@
     </button>
   {/each}
 
-  <button type="button" class="new" title="新建标签 (⌘T)" onclick={() => editor.openBlankTab("")}>
+  <button type="button" class="new" title={i18n.t.tab.new} onclick={() => editor.openBlankTab("")}>
     +
   </button>
 </div>

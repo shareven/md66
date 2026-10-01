@@ -1,6 +1,7 @@
 <script lang="ts">
   /** 底部状态栏：提示信息 + 字数统计 + 字号 */
   import { editor } from "$lib/editorStore.svelte";
+  import { i18n } from "$lib/i18n.svelte";
 
   let content = $derived(editor.active?.content ?? "");
 
@@ -19,13 +20,13 @@
 <footer class="statusbar">
   <span class="msg">{editor.statusMsg}</span>
   <span class="stats">
-    <span>{stats.words} 字</span>
-    <span>{stats.chars} 字符</span>
-    <span>{stats.lines} 行</span>
+    <span>{i18n.t.status.words(stats.words)}</span>
+    <span>{i18n.t.status.chars(stats.chars)}</span>
+    <span>{i18n.t.status.lines(stats.lines)}</span>
     <span class="sep"></span>
-    <button type="button" title="缩小字体 (⌘-)" onclick={() => editor.zoomFont(-1)}>−</button>
-    <span class="zoom" title="编辑区字号">{editor.fontPx}px</span>
-    <button type="button" title="放大字体 (⌘+)" onclick={() => editor.zoomFont(1)}>+</button>
+    <button type="button" title={i18n.t.status.zoomOut} onclick={() => editor.zoomFont(-1)}>−</button>
+    <span class="zoom" title={i18n.t.status.fontSize}>{editor.fontPx}px</span>
+    <button type="button" title={i18n.t.status.zoomIn} onclick={() => editor.zoomFont(1)}>+</button>
   </span>
 </footer>
 

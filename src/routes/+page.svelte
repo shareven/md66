@@ -4,6 +4,7 @@
   import CommandPalette from "$lib/components/CommandPalette.svelte";
   import type { Command } from "$lib/components/CommandPalette.svelte";
   import FindBar from "$lib/components/FindBar.svelte";
+  import { handleAnchorJump } from "$lib/anchorJump";
   import MenuBar from "$lib/components/MenuBar.svelte";
   import type { MenuDef, MenuItem } from "$lib/components/MenuBar.svelte";
   import Outline from "$lib/components/Outline.svelte";
@@ -13,6 +14,8 @@
   import TabBar from "$lib/components/TabBar.svelte";
   import { APP_NAME, APP_VERSION } from "$lib/appInfo";
   import { editor } from "$lib/editorStore.svelte";
+  import { i18n } from "$lib/i18n.svelte";
+  import { scheduleUpdateCheck, updater } from "$lib/updater.svelte";
   import {
     basename,
     dirname,
@@ -21,10 +24,11 @@
     saveImageAsset,
     setWindowTitle,
   } from "$lib/fileService";
-  import { exportImage, exportWord, printDocument } from "$lib/exporter";
+  import { exportImage, exportPdf, exportWord, printDocument } from "$lib/exporter";
 
   const isMac = /Mac|iPhone|iPad/.test(navigator.userAgent);
   const mod = isMac ? "⌘" : "Ctrl+";
+  const shift = isMac ? "⇧" : "Shift+";
 
   const active = $derived(editor.active);
   const fileName = $derived(active ? (active.path ? basename(active.path) : "") : "");
@@ -60,7 +64,7 @@
   /* ---------- 命令 ---------- */
 
   async function newWindow() {
-    if (!isTauri) return editor.flash("多窗口需在桌面应用中使用");
+    if (!isTauri) return editor.flash(i18n.t.store.multiWindow);
     const { WebviewWindow } = await import("@tauri-apps/api/webviewWindow");
     await new WebviewWindow(`md66-${Date.now()}`, { url: "/", title: APP_NAME });
   }
@@ -75,99 +79,127 @@
 
   function insertToc() {
     editor.insertToActive("[TOC]\n\n");
-    editor.flash("已插入目录标记");
+    editor.flash(i18n.t.page.tocInserted);
   }
 
   async function doExportWord() {
     if (!active) return;
     try {
       await exportWord(active.content, active.path);
-      editor.flash("已导出 Word");
+      editor.flash(i18n.t.page.exportedWord);
     } catch (err) {
-      editor.flash(err instanceof Error && err.message ? err.message : "导出失败");
+      editor.flash(err instanceof Error && err.message ? err.message : i18n.t.page.exportFailed);
+    }
+  }
+
+  async function doExportPdf() {
+    if (!active) return;
+    editor.flash(i18n.t.page.generatingPdf);
+    try {
+      await exportPdf(active.content, active.path);
+      editor.flash(i18n.t.page.exportedPdf);
+    } catch (err) {
+      editor.flash(err instanceof Error && err.message ? err.message : i18n.t.page.exportFailed);
+    }
+  }
+
+  async function doPrint() {
+    if (!active) return;
+    try {
+      const msg = await printDocument(active.content, active.path);
+      if (msg) editor.flash(msg);
+    } catch (err) {
+      editor.flash(err instanceof Error && err.message ? err.message : i18n.t.page.exportFailed);
     }
   }
 
   async function doExportImage() {
     if (!active) return;
-    editor.flash("正在生成图片…");
+    editor.flash(i18n.t.page.generating);
     try {
       await exportImage(active.content, active.path, editor.dark);
-      editor.flash("已导出图片");
+      editor.flash(i18n.t.page.exportedImage);
     } catch (err) {
-      editor.flash(err instanceof Error && err.message ? err.message : "导出失败");
+      editor.flash(err instanceof Error && err.message ? err.message : i18n.t.page.exportFailed);
     }
   }
 
   /* ---------- 菜单 ---------- */
 
-  const menus = $derived<MenuDef[]>([
-    {
-      label: "文件",
-      items: [
-        { label: "新建窗口", shortcut: `${mod}N`, action: () => void newWindow() },
-        { label: "新建标签", shortcut: `${mod}T`, action: () => editor.openBlankTab("") },
-        { label: "打开…", shortcut: `${mod}O`, action: () => void editor.openFilePicker() },
-        ...(editor.recents.length > 0
-          ? [
-              { separator: true } as MenuItem,
-              ...editor.recents.map(
-                (p) =>
-                  ({
-                    label: basename(p),
-                    action: () => void editor.openPath(p),
-                  }) as MenuItem,
-              ),
-            ]
-          : []),
-        { separator: true },
-        { label: "保存", shortcut: `${mod}S`, action: () => void editor.saveActive() },
-        { label: "另存为…", shortcut: `${mod}⇧S`, action: () => void editor.saveActiveAs() },
-        { label: `自动保存${editor.autoSave ? " ✓" : ""}`, action: () => editor.toggleAutoSave() },
-        { separator: true },
-        { label: "导出 PDF…（打印对话框中选“存储为 PDF”）", action: printDocument },
-        { label: "导出 Word…", action: () => void doExportWord() },
-        { label: "导出图片…", action: () => void doExportImage() },
-        { separator: true },
-        { label: "打印…", shortcut: `${mod}P`, action: printDocument },
-        { separator: true },
-        { label: "关闭标签", shortcut: `${mod}W`, action: () => void closeActiveTab() },
-      ],
-    },
-    {
-      label: "编辑",
-      items: [
-        { label: "查找替换…", shortcut: `${mod}F`, action: () => (editor.findOpen = !editor.findOpen) },
-        { separator: true },
-        { label: "插入目录（TOC）", action: insertToc },
-        { label: "插入当前日期", action: () => editor.insertToActive(new Date().toLocaleDateString("zh-CN")) },
-      ],
-    },
-    {
-      label: "视图",
-      items: [
-        { label: "预览模式", shortcut: `${mod}/`, action: () => (editor.mode = "preview") },
-        { label: "源码模式", shortcut: `${mod}/`, action: () => (editor.mode = "source") },
-        { separator: true },
-        { label: `大纲面板${editor.outlineOpen ? " ✓" : ""}`, shortcut: `${mod}⇧O`, action: toggleOutline },
-        { separator: true },
-        { label: "放大字体", shortcut: `${mod}+`, action: () => editor.zoomFont(1) },
-        { label: "缩小字体", shortcut: `${mod}-`, action: () => editor.zoomFont(-1) },
-        { label: "重置字体", shortcut: `${mod}0`, action: () => editor.zoomFont(0, true) },
-        { separator: true },
-        { label: `深色模式${editor.dark ? " ✓" : ""}`, action: () => (editor.dark = !editor.dark) },
-      ],
-    },
-    {
-      label: "帮助",
-      items: [
-        { label: "Markdown 语法说明", action: () => goto("/guide") },
-        { label: "命令面板", shortcut: `${mod}⇧P`, action: () => (editor.paletteOpen = true) },
-        { separator: true },
-        { label: `关于 ${APP_NAME}（v${APP_VERSION}）`, action: () => goto("/about") },
-      ],
-    },
-  ]);
+  const menus = $derived.by<MenuDef[]>(() => {
+    const t = i18n.t;
+    return [
+      {
+        label: t.menu.file,
+        items: [
+          { label: t.menu.newWindow, shortcut: `${mod}N`, action: () => void newWindow() },
+          { label: t.menu.newTab, shortcut: `${mod}T`, action: () => editor.openBlankTab("") },
+          { label: t.menu.open, shortcut: `${mod}O`, action: () => void editor.openFilePicker() },
+          ...(editor.recents.length > 0
+            ? [
+                { separator: true } as MenuItem,
+                ...editor.recents.map(
+                  (p) =>
+                    ({
+                      label: basename(p),
+                      action: () => void editor.openPath(p),
+                    }) as MenuItem,
+                ),
+              ]
+            : []),
+          { separator: true },
+          { label: t.menu.save, shortcut: `${mod}S`, action: () => void editor.saveActive() },
+          { label: t.menu.saveAs, shortcut: `${mod}${shift}S`, action: () => void editor.saveActiveAs() },
+          { label: `${t.menu.autoSave}${editor.autoSave ? " ✓" : ""}`, action: () => editor.toggleAutoSave() },
+          { separator: true },
+          { label: t.menu.exportPdf, action: () => void doExportPdf() },
+          { label: t.menu.exportWord, action: () => void doExportWord() },
+          { label: t.menu.exportImage, action: () => void doExportImage() },
+          { separator: true },
+          { label: t.menu.print, shortcut: `${mod}P`, action: () => void doPrint() },
+          { separator: true },
+          { label: t.menu.closeTab, shortcut: `${mod}W`, action: () => void closeActiveTab() },
+        ],
+      },
+      {
+        label: t.menu.edit,
+        items: [
+          { label: t.menu.findReplace, shortcut: `${mod}F`, action: () => (editor.findOpen = !editor.findOpen) },
+          { separator: true },
+          { label: t.menu.insertToc, action: insertToc },
+          {
+            label: t.menu.insertDate,
+            action: () => editor.insertToActive(new Date().toLocaleDateString(i18n.t.common.dateLocale)),
+          },
+        ],
+      },
+      {
+        label: t.menu.view,
+        items: [
+          { label: t.menu.previewMode, shortcut: `${mod}/`, action: () => (editor.mode = "preview") },
+          { label: t.menu.sourceMode, shortcut: `${mod}/`, action: () => (editor.mode = "source") },
+          { separator: true },
+          { label: `${t.menu.outlinePanel}${editor.outlineOpen ? " ✓" : ""}`, shortcut: `${mod}${shift}O`, action: toggleOutline },
+          { separator: true },
+          { label: t.menu.zoomIn, shortcut: `${mod}${isMac ? "+" : "="}`, action: () => editor.zoomFont(1) },
+          { label: t.menu.zoomOut, shortcut: `${mod}-`, action: () => editor.zoomFont(-1) },
+          { label: t.menu.resetZoom, shortcut: `${mod}0`, action: () => editor.zoomFont(0, true) },
+          { separator: true },
+          { label: `${t.menu.darkMode}${editor.dark ? " ✓" : ""}`, action: () => (editor.dark = !editor.dark) },
+        ],
+      },
+      {
+        label: t.menu.help,
+        items: [
+          { label: t.menu.guide, action: () => goto("/guide") },
+          { label: t.menu.palette, shortcut: `${mod}${shift}P`, action: () => (editor.paletteOpen = true) },
+          { label: t.menu.checkUpdate, action: () => void updater.check(true) },
+          { separator: true },
+          { label: t.menu.about(APP_NAME, APP_VERSION), action: () => goto("/about") },
+        ],
+      },
+    ];
+  });
 
   const commands = $derived.by(() => {
     const list: Command[] = [];
@@ -208,7 +240,7 @@
       editor.paletteOpen = true;
     } else if (key === "p") {
       e.preventDefault();
-      printDocument();
+      void doPrint();
     } else if (key === "o" && e.shiftKey) {
       e.preventDefault();
       toggleOutline();
@@ -248,17 +280,17 @@
     const tab = editor.active;
     if (!tab) return;
     if (!tab.path) {
-      editor.flash("请先保存文件后再插入图片");
+      editor.flash(i18n.t.page.saveFirst);
       return;
     }
     try {
       const rel = await saveImageAsset(dirname(tab.path), ext, data);
       if (rel) {
-        editor.insertToActive(`\n![${name || "图片"}](${rel})\n`);
-        editor.flash("图片已插入");
+        editor.insertToActive(`\n![${name || i18n.t.page.imageAlt}](${rel})\n`);
+        editor.flash(i18n.t.page.imageInserted);
       }
     } catch {
-      editor.flash("图片保存失败");
+      editor.flash(i18n.t.page.imageSaveFailed);
     }
   }
 
@@ -291,7 +323,7 @@
           const data = await readBinary(path);
           await insertImageFromData(basename(path), (path.split(".").pop() ?? "png").toLowerCase(), data);
         } catch {
-          editor.flash("图片插入失败");
+          editor.flash(i18n.t.page.imageInsertFailed);
         }
       }
     }
@@ -313,11 +345,11 @@
           // 本地无修改，静默重载
           tab.content = diskNow;
           tab.saved = diskNow;
-          editor.flash(`「${basename(tab.path)}」已被外部修改，已重新加载`);
+          editor.flash(i18n.t.page.externalReloaded(basename(tab.path)));
         } else if (tab.id === editor.activeId) {
           const { ask } = await import("@tauri-apps/plugin-dialog");
           const reload = await ask(
-            `「${basename(tab.path)}」已被其他程序修改，重新加载吗？本地未保存的修改将丢失。`,
+            i18n.t.page.externalAsk(basename(tab.path)),
             { title: APP_NAME, kind: "warning" },
           );
           if (reload) {
@@ -336,6 +368,9 @@
   onMount(() => {
     let cleanups: (() => void)[] = [];
     let disposed = false;
+
+    // 启动后静默检查一次应用更新（GitHub Release），发现新版本时顶部显示更新按钮
+    scheduleUpdateCheck();
 
     // 系统双击文件打开（macOS RunEvent::Opened / Windows-Linux CLI args）。
     // 必须最先注册且独立容错：任何其它初始化失败都不能阻断文件打开。
@@ -381,7 +416,7 @@
           if (n === 0) return; // 无修改，正常关闭
           event.preventDefault();
           const { ask } = await import("@tauri-apps/plugin-dialog");
-          const save = await ask(`${n} 个标签有未保存的修改，关闭前保存吗？`, {
+          const save = await ask(i18n.t.page.closeConfirm(editor.dirtyCount), {
             title: APP_NAME,
             kind: "warning",
           });
@@ -422,31 +457,49 @@
     <span
       class="file-name"
       class:dirty
-      title={active?.path ?? "未关联文件，修改会自动存为草稿"}
+      title={active?.path ?? i18n.t.header.noFile}
     >
       {fileName}
     </span>
 
-    <div class="seg" role="tablist" aria-label="编辑模式">
+    <div class="seg" role="tablist" aria-label={i18n.t.header.modeAria}>
       <button
         type="button"
         class:on={editor.mode === "preview"}
         onclick={() => (editor.mode = "preview")}
-        title="在渲染后的富文本界面上直接编辑"
+        title={i18n.t.header.previewTitle}
       >
-        预览
+        {i18n.t.header.preview}
       </button>
       <button
         type="button"
         class:on={editor.mode === "source"}
         onclick={() => (editor.mode = "source")}
-        title="编辑原始 Markdown 文本"
+        title={i18n.t.header.sourceTitle}
       >
-        源码
+        {i18n.t.header.source}
       </button>
     </div>
 
-    <span class="hint">{dirty ? "未保存…" : `${mod}/ 切换模式`}</span>
+    {#if updater.hasUpdate}
+      <button
+        type="button"
+        class="update-btn"
+        disabled={updater.phase === "downloading"}
+        onclick={() => void updater.downloadAndInstall()}
+        title={updater.phase === "downloading" ? "" : i18n.t.update.btnTitle(updater.latest)}
+      >
+        {#if updater.phase === "downloading"}
+          ↓ {i18n.t.update.downloading(updater.progress)}
+        {:else}
+          ↓ {i18n.t.update.btn(updater.latest)}
+        {/if}
+      </button>
+    {/if}
+
+    <span class="hint">
+      {dirty ? i18n.t.header.unsaved : i18n.t.header.toggleMode(mod)}
+    </span>
   </header>
 
   <TabBar />
@@ -456,7 +509,7 @@
       <Outline />
     {/if}
 
-    <main>
+    <main onclickcapture={handleAnchorJump}>
       {#if active}
         {#key active.id}
           <div class="pane" class:show={editor.mode === "preview"}>
@@ -594,6 +647,31 @@
   .seg button.on {
     color: var(--accent-text);
     background: var(--accent);
+  }
+
+  .update-btn {
+    flex: none;
+    height: 24px;
+    padding: 0 10px;
+    border: none;
+    border-radius: 12px;
+    font-size: 11.5px;
+    line-height: 1;
+    font-family: inherit;
+    color: #ffffff;
+    background: #1f883d;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background-color 0.15s;
+  }
+
+  .update-btn:hover:not(:disabled) {
+    background: #1a7f37;
+  }
+
+  .update-btn:disabled {
+    cursor: default;
+    opacity: 0.85;
   }
 
   .hint {
